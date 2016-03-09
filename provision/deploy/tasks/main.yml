@@ -1,0 +1,5 @@
+- name: Install Virtualenv requirements
+  pip: virtualenv={{ virtualenv_path }} requirements={{ virtualenv_path }}/requirements.txt
+
+- name: Django migrate
+  django_manage: command=migrate app_path={{ virtualenv_path }}/vagranttest virtualenv={{ virtualenv_path }}

@@ -1,0 +1,41 @@
+- name: Install packages
+  become: yes
+  apt: pkg={{ item }} state=installed update_cache=yes
+  with_items:
+      # Database
+      - postgresql
+      - libpq-dev # Required for Ansible to interact with postgres
+      - python-psycopg2 # Required for Ansible to interact with postgres
+
+      # Python Dev
+      - python-dev
+      - python-setuptools
+      - python-virtualenv
+
+- name: Install virtualenvwrapper
+  become: yes
+  pip: name=virtualenvwrapper
+
+- name: Allow password authentication for local socket users
+  become: yes
+  copy: src=pg_hba.conf dest=/etc/postgresql/9.3/main/pg_hba.conf force=yes
+  notify:
+      - Restart Postgres
+
+- name: Create Database
+  become: yes
+  become_user: postgres
+  postgresql_db: name={{ db_name }}
+
+- name: Create User
+  become: yes
+  become_user: postgres
+  postgresql_user: name={{ db_user }} password={{ db_password }} state=present role_attr_flags=NOSUPERUSER,CREATEDB
+
+- name: Provide user with DB permissions
+  become: yes
+  become_user: postgres
+  postgresql_user: user={{ db_user }} db={{ db_name }} priv=ALL
+
+- name: Create virtual environment
+  command: virtualenv {{ virtualenv_path }} creates="{{ virtualenv_path }}"
