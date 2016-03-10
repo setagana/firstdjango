@@ -47,13 +47,20 @@ Vagrant.configure(2) do |config|
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
   #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
+  config.vm.provider "virtualbox" do |vb|
+    # Display the VirtualBox GUI when booting the machine
+    vb.gui = true
   #
   #   # Customize the amount of memory on the VM:
   #   vb.memory = "1024"
-  # end
+    
+    ### Change network card to PCnet-FAST III
+    # For NAT adapter
+    vb.customize ["modifyvm", :id, "--nictype1", "Am79C973"]
+    # For host-only adapter
+    vb.customize ["modifyvm", :id, "--nictype2", "Am79C973"]
+
+  end
   #
   # View the documentation for the provider you are using for more
   # information on available options.
@@ -70,6 +77,18 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
+
+    ### Create configuration for host-only adapter. In my case eth1
+    # Clear previous setting
+    rm -f /etc/network/interfaces.d/eth1.cfg
+    # Create new setting
+    echo "auto eth1" >> /etc/network/interfaces.d/eth1.cfg
+    echo "iface eth1 inet static" >> /etc/network/interfaces.d/eth1.cfg
+    # ip address should be the same as in a private_network
+    echo "address 192.168.35.25" >> /etc/network/interfaces.d/eth1.cfg
+    echo "netmask 255.255.255.0" >> /etc/network/interfaces.d/eth1.cfg
+    # Restart adapter for apply new setting
+    ifdown eth1 && ifup eth1
   SHELL
 
   # Install required software, dependencies and configurations on the
